@@ -279,5 +279,7 @@ fun checkoutRepoFromUpstream(
     }
     git("reset", "--hard", if (ref) upstreamBranch else "$upstreamName/$upstreamBranch")
         .executeSilently(silenceErr = true)
-    git("gc").runSilently(silenceErr = true)
+    // `--auto` only triggers the expensive repacking when git's loose-object thresholds are
+    // exceeded, keeping repeated patch applications fast.
+    git("gc", "--auto").runSilently(silenceErr = true)
 }

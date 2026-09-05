@@ -142,7 +142,7 @@ object TinyRemapper {
         fixPackageAccess: Boolean = false,
         renameInvalidLocals: Boolean = false,
         invalidLvNamePattern: String? = null,
-        threads: Int = 1,
+        threads: Int = Runtime.getRuntime().availableProcessors(),
         rebuildSourceFileNames: Boolean = false,
     ): List<String> {
         val args = baseArgs.toMutableList()

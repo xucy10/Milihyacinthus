@@ -6,7 +6,8 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions: write-all
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -21,11 +22,15 @@ jobs:
         with:
           distribution: zulu
           java-version: 25
+          cache: gradle
+
+      - name: Build and verify
+        if: github.event_name == 'pull_request'
+        run: ./gradlew build --stacktrace
+
       - name: Publish to repo
         if: github.event_name != 'pull_request'
         run: ./gradlew publish --no-daemon --stacktrace --no-configuration-cache
         env:
           PRIVATE_MAVEN_REPO_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           PRIVATE_MAVEN_REPO_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-
-

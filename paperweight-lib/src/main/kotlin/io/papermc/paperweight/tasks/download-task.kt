@@ -150,9 +150,29 @@ fun downloadLibraries(
     libraries: List<String>,
     sources: Boolean
 ): WorkQueue {
-    val excludes = listOf(targetDir.fileSystem.getPathMatcher("glob:*.etag"))
-    targetDir.deleteRecursive(excludes)
-    if (!targetDir.exists()) {
+    // Instead of wiping the whole directory, only remove files that are no longer part of the
+    // library set. Existing artifacts are re-validated by the conditional GETs in DownloadService
+    // (If-None-Match / If-Modified-Since), avoiding full re-downloads on re-runs.
+    val expectedNames = libraries.mapTo(mutableSetOf()) { lib ->
+        val artifact = MavenArtifact.parse(lib)
+        if (sources) artifact.copy(classifier = "sources").file else artifact.file
+    }
+    if (targetDir.isDirectory()) {
+        for (entry in targetDir.listDirectoryEntries()) {
+            if (entry.isDirectory() && entry.name == "etags") {
+                // DownloadService stores etag files for the artifacts here; only prune etags of
+                // artifacts that are no longer part of the library set
+                for (etag in entry.listDirectoryEntries()) {
+                    if (etag.name.removeSuffix(".etag") !in expectedNames) {
+                        etag.deleteIfExists()
+                    }
+                }
+            } else if (entry.name !in expectedNames) {
+                entry.deleteRecursive()
+            }
+        }
+    } else {
+        targetDir.deleteIfExists()
         targetDir.createDirectories()
     }
 

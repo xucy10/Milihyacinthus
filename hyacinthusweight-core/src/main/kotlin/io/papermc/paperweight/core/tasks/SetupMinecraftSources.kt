@@ -34,6 +34,8 @@ import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
 import kotlin.io.path.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ResetCommand
 import org.eclipse.jgit.lib.PersonIdent
@@ -124,24 +126,30 @@ abstract class SetupMinecraftSources : JavaLauncherZippedTask() {
         }
 
         println("Copy initial sources...")
-        inputFile.path.openZip().use { inputFileFs ->
-            inputFileFs.walkSequence()
-                .filter(predicate.get()::test)
-                .forEach {
-                    val target = outputPath.resolve(it.toString().substring(1))
-                    target.parent.createDirectories()
-                    if (it.toString().endsWith(".nbt")) {
-                        // nbt files are binary, so we can just copy them
-                        it.copyTo(target)
-                    } else {
-                        // for text files we make sure we have a trailing newline
-                        var content = it.readText()
-                        if (!content.endsWith("\n")) {
-                            content += "\n"
+        ioDispatcher("SetupMinecraftSources").use { dispatcher ->
+            inputFile.path.openZip().use { inputFileFs ->
+                coroutineScope {
+                    inputFileFs.walkSequence()
+                        .filter(predicate.get()::test)
+                        .forEach { file ->
+                            launch(dispatcher) {
+                                val target = outputPath.resolve(file.toString().substring(1))
+                                target.parent.createDirectories()
+                                if (file.toString().endsWith(".nbt")) {
+                                    // nbt files are binary, so we can just copy them
+                                    file.copyTo(target)
+                                } else {
+                                    // for text files we make sure we have a trailing newline
+                                    var content = file.readText()
+                                    if (!content.endsWith("\n")) {
+                                        content += "\n"
+                                    }
+                                    target.writeText(content)
+                                }
+                            }
                         }
-                        target.writeText(content)
-                    }
                 }
+            }
         }
 
         println("Setup git repo...")
