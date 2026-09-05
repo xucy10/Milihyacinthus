@@ -280,6 +280,9 @@ fun checkoutRepoFromUpstream(
     git("reset", "--hard", if (ref) upstreamBranch else "$upstreamName/$upstreamBranch")
         .executeSilently(silenceErr = true)
     // `--auto` only triggers the expensive repacking when git's loose-object thresholds are
-    // exceeded, keeping repeated patch applications fast.
-    git("gc", "--auto").runSilently(silenceErr = true)
+    // exceeded, keeping repeated patch applications fast. gc.autoDetach=false keeps the gc in
+    // the foreground: a detached gc would keep mutating the repository (e.g. rewriting
+    // multi-pack-index) while later tasks copy the very same directory, failing the build with
+    // java.nio.file.NoSuchFileException on files like multi-pack-index.lock.
+    git("-c", "gc.autoDetach=false", "gc", "--auto").runSilently(silenceErr = true)
 }
