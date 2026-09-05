@@ -78,7 +78,8 @@ abstract class FixJarForReobf : JavaLauncherTask() {
 
         val queue = workerExecutor.processIsolation {
             forkOptions.jvmArgs(jvmargs.get())
-            forkOptions.executable(launcher.get().executablePath.path.absolutePathString())
+            // Inherit the daemon JVM: the worker classpath contains this plugin's jar,
+            // which may be compiled for a newer JVM than the project toolchain targets.
         }
 
         queue.submit(FixJarForReobfWorker::class) {

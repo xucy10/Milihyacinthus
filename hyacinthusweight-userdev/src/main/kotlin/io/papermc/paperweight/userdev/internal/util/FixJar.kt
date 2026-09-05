@@ -51,7 +51,8 @@ fun fixJar(
 
     val queue = workerExecutor.processIsolation {
         forkOptions.jvmArgs(jvmArgs)
-        forkOptions.executable(launcher.executablePath.path.absolutePathString())
+        // Inherit the daemon JVM: the worker classpath contains this plugin's jar,
+        // which may be compiled for a newer JVM than the project toolchain targets.
     }
 
     queue.submit(FixJarAction::class) {

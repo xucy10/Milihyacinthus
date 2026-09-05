@@ -93,7 +93,8 @@ abstract class GenerateReobfMappings : JavaLauncherTask() {
     fun run() {
         val queue = workerExecutor.processIsolation {
             forkOptions.jvmArgs(jvmArgs.get())
-            forkOptions.executable(launcher.get().executablePath.path.absolutePathString())
+            // Inherit the daemon JVM: the worker classpath contains this plugin's jar,
+            // which may be compiled for a newer JVM than the project toolchain targets.
         }
 
         queue.submit(GenerateReobfMappingsAction::class) {
