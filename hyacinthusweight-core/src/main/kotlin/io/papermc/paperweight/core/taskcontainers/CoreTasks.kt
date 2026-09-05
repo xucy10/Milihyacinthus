@@ -57,6 +57,19 @@ class CoreTasks(
         minecraftClasspath.from(project.configurations.named(MACHE_MINECRAFT_LIBRARIES_CONFIG))
         constants.from(project.configurations.named(MACHE_CONSTANTS_CONFIG))
 
+        // Legacy (obfuscation-era) mache declares a tiny-remapper setup and
+        // remapperArgs referencing {remapperFile}/{mappingsFile}/{paramsFile}.
+        // Wire the remapping inputs only when the mache actually declares a
+        // remapper, so 26.1+ mache (unobfuscated server jar) is unaffected.
+        val legacyMache = mache.map { it.dependencies.remapper != null }
+        serverMappings.set(
+            legacyMache.flatMap { legacy ->
+                if (legacy) downloadMappings.flatMap { it.outputFile } else null
+            }
+        )
+        remapperClasspath.from(project.configurations.named(MACHE_REMAPPER_CONFIG))
+        paramMappings.from(project.configurations.named(MACHE_PARAM_MAPPINGS_CONFIG))
+
         outputJar.set(layout.cache.resolve(FINAL_REMAPPED_CODEBOOK_JAR))
     }
 
