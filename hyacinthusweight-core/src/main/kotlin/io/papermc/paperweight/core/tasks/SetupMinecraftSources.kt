@@ -34,8 +34,8 @@ import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
 import kotlin.io.path.*
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ResetCommand
 import org.eclipse.jgit.lib.PersonIdent
@@ -128,7 +128,7 @@ abstract class SetupMinecraftSources : JavaLauncherZippedTask() {
         println("Copy initial sources...")
         ioDispatcher("SetupMinecraftSources").use { dispatcher ->
             inputFile.path.openZip().use { inputFileFs ->
-                coroutineScope {
+                runBlocking {
                     inputFileFs.walkSequence()
                         .filter(predicate.get()::test)
                         .forEach { file ->
