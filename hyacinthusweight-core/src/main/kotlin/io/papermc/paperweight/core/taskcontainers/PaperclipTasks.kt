@@ -23,6 +23,7 @@
 package io.papermc.paperweight.core.taskcontainers
 
 import com.google.gson.JsonObject
+import io.papermc.paperweight.core.util.coreExt
 import io.papermc.paperweight.core.util.reobfRequiresDebug
 import io.papermc.paperweight.tasks.*
 import io.papermc.paperweight.util.*
@@ -51,16 +52,30 @@ class PaperclipTasks(
     private val mcVersion: Provider<String>
 ) {
     init {
-        val (createBundlerJar, createPaperclipJar) = project.createTasks("mojmap")
+        val (createBundlerJar, createMojmapPaperclipJar) = project.createTasks("mojmap")
         val (createReobfBundlerJar, createReobfPaperclipJar) = project.createTasks("reobf")
 
         createBundlerJar.serverJar(mojangJar)
         createReobfBundlerJar.serverJar(reobfJar) {
             reobfRequiresDebug()
         }
-        createPaperclipJar.bundlerJar(createBundlerJar)
+        createMojmapPaperclipJar.bundlerJar(createBundlerJar)
         createReobfPaperclipJar.bundlerJar(createReobfBundlerJar) {
             reobfRequiresDebug()
+        }
+
+        // Legacy task name compat: pre-classifier paperweight published a plain
+        // `createPaperclipJar` task (spigot-mapped output). Depend on the reobf
+        // variant when the spigot pipeline is enabled, else the mojmap variant.
+        project.tasks.register("createPaperclipJar") {
+            group = "bundling"
+            description =
+                "Build a runnable paperclip jar (reobf variant when the spigot pipeline is enabled, mojmap otherwise)"
+            dependsOn(
+                project.coreExt.spigot.enabled.flatMap { enabled ->
+                    if (enabled) createReobfPaperclipJar else createMojmapPaperclipJar
+                }
+            )
         }
     }
 

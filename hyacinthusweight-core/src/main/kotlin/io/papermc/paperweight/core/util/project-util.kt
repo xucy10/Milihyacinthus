@@ -101,7 +101,8 @@ fun Project.createBuildTasks(
 
 fun Task.reobfRequiresDebug() {
     doFirst {
-        if (!paperweightDebug()) {
+        val spigotPipelineEnabled = project.coreExt.spigot.enabled.orNull == true
+        if (!spigotPipelineEnabled && !paperweightDebug()) {
             throw PaperweightException(
                 "Reobfuscated server jars are no longer supported and only exist for debugging purposes.\n" +
                     "If you are attempting to build a paperclip or bundler jar, use the 'mojmap' variant instead of 'reobf'.\n" +
