@@ -30,6 +30,7 @@ import io.papermc.paperweight.core.taskcontainers.DevBundleTasks
 import io.papermc.paperweight.core.taskcontainers.PaperclipTasks
 import io.papermc.paperweight.core.tasks.patchroulette.PatchRouletteTasks
 import io.papermc.paperweight.core.util.coreExt
+import io.papermc.paperweight.core.util.createBuildTasks
 import io.papermc.paperweight.tasks.*
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.*
@@ -137,7 +138,19 @@ abstract class PaperweightCore : Plugin<Project> {
             }
         }
 
-        val serverJar = target.tasks.named("jar", AbstractArchiveTask::class).flatMap { it.archiveFile }
+        val jar = target.tasks.named("jar", AbstractArchiveTask::class)
+
+        tasks.generateReobfMappings {
+            inputJar.set(jar.flatMap { it.archiveFile })
+        }
+        tasks.generateRelocatedReobfMappings {
+            inputJar.set(jar.flatMap { it.archiveFile })
+        }
+        val (mappedJar, reobfJar) = target.createBuildTasks(
+            ext.spigot,
+            ext.reobfPackagesToFix,
+            tasks.generateRelocatedReobfMappings.flatMap { it.outputMappings },
+        )
 
         PaperclipTasks(
             target,
@@ -146,7 +159,8 @@ abstract class PaperweightCore : Plugin<Project> {
             tasks.extractFromBundler.flatMap { it.versionJson },
             tasks.extractFromBundler.flatMap { it.serverLibrariesList },
             tasks.downloadServerJar.flatMap { it.outputJar },
-            serverJar,
+            mappedJar,
+            reobfJar,
             ext.minecraftVersion,
         )
 
@@ -179,7 +193,7 @@ abstract class PaperweightCore : Plugin<Project> {
             tasks.afterEvaluate()
 
             devBundleTasks.configureAfterEvaluate(
-                serverJar,
+                mappedJar,
             )
 
             if (coreExt.updatingMinecraft.oldPaperCommit.isPresent || target.providers.gradleProperty("updatingMinecraft").orNull == "true") {

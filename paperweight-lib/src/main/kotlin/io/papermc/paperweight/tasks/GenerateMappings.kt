@@ -52,13 +52,24 @@ import org.cadixdev.lorenz.model.MethodParameterMapping
 import org.cadixdev.lorenz.model.TopLevelClassMapping
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.kotlin.dsl.*
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
+import javax.inject.Inject
 
 fun generateMappings(
     vanillaJarPath: Path,
@@ -283,5 +294,54 @@ class ParamsMergeHandler : MappingSetMergerHandler {
         context: MergeContext?
     ): MergeResult<MethodMapping?> {
         return emptyMergeResult()
+    }
+}
+
+@CacheableTask
+abstract class GenerateMappings : JavaLauncherTask() {
+
+    @get:Classpath
+    abstract val vanillaJar: RegularFileProperty
+
+    @get:Classpath
+    abstract val libraries: ConfigurableFileCollection
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val vanillaMappings: RegularFileProperty
+
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val paramMappings: RegularFileProperty
+
+    @get:OutputFile
+    abstract val outputMappings: RegularFileProperty
+
+    @get:Internal
+    abstract val jvmargs: ListProperty<String>
+
+    @get:Inject
+    abstract val workerExecutor: WorkerExecutor
+
+    override fun init() {
+        super.init()
+
+        jvmargs.convention(listOf("-Xmx1G"))
+    }
+
+    @TaskAction
+    fun run() {
+        generateMappings(
+            vanillaJar.path,
+            libraries.files.map { it.toPath() },
+            vanillaMappings.path,
+            paramMappings.pathOrNull,
+            outputMappings.path,
+            DEOBF_NAMESPACE,
+            workerExecutor,
+            launcher.get(),
+            jvmargs.get()
+        )
     }
 }
