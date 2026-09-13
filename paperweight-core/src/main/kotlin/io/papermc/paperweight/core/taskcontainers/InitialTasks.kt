@@ -78,6 +78,14 @@ open class InitialTasks(
         downloader.set(downloadService)
     }
 
+    val downloadMappings by tasks.registering<CacheableDownloadTask> {
+        url.set(versionManifest.map { version -> version.serverMappingsDownload().url })
+        expectedHash.set(versionManifest.map { version -> version.serverMappingsDownload().hash() })
+        outputFile.set(cache.resolve(SERVER_MAPPINGS))
+
+        downloader.set(downloadService)
+    }
+
     val extractFromBundler by tasks.registering<ExtractFromBundler> {
         bundlerJar.set(downloadServerJar.flatMap { it.outputJar })
 

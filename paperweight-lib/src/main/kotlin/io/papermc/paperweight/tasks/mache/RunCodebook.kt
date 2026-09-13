@@ -49,6 +49,17 @@ abstract class RunCodebook : JavaLauncherTask() {
     @get:CompileClasspath
     abstract val minecraftClasspath: ConfigurableFileCollection
 
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:InputFile
+    abstract val serverMappings: RegularFileProperty
+
+    @get:Classpath
+    abstract val remapperClasspath: ConfigurableFileCollection
+
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:InputFiles
+    abstract val paramMappings: ConfigurableFileCollection
+
     @get:Classpath
     abstract val constants: ConfigurableFileCollection
 
@@ -63,9 +74,9 @@ abstract class RunCodebook : JavaLauncherTask() {
             outputJar.path,
             codebookArgs.get(),
             temporaryDir.toPath(),
-            null,
-            null,
-            null,
+            remapperClasspath,
+            serverMappings.path,
+            paramMappings.singleFile.toPath(),
             constants.files.singleOrNull()?.toPath(),
             serverJar.path,
             minecraftClasspath.files.map { it.toPath() }
