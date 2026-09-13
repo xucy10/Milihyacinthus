@@ -67,6 +67,7 @@ abstract class PaperweightCore : Plugin<Project> {
 
         target.gradle.sharedServices.registerIfAbsent(DOWNLOAD_SERVICE_NAME, DownloadService::class) {
             parameters.projectPath.set(target.projectDir)
+            parameters.configureFromProject(target)
         }
 
         target.tasks.register<Delete>("cleanCache") {

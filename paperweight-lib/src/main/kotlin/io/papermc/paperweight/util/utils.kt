@@ -114,6 +114,21 @@ fun <T : FileSystemLocation> Provider<out T>.fileExists(): Provider<out T> {
 val Project.download: Provider<DownloadService>
     get() = gradle.sharedServices.registrations.getByName(DOWNLOAD_SERVICE_NAME).service as Provider<DownloadService>
 
+/**
+ * Populates the download service parameters from Gradle properties, enabling mirror support,
+ * retry tuning and connection pool tuning for downstream projects (e.g. Mili).
+ */
+fun DownloadService.Params.configureFromProject(project: Project) {
+    val p = project.providers
+    maxConnections.set(p.gradleProperty(DOWNLOAD_MAX_CONNECTIONS_PROPERTY).map { it.toInt() })
+    maxConnectionsPerRoute.set(p.gradleProperty(DOWNLOAD_MAX_CONN_PER_ROUTE_PROPERTY).map { it.toInt() })
+    retries.set(p.gradleProperty(DOWNLOAD_RETRIES_PROPERTY).map { it.toInt() })
+    mirrorRules.set(
+        p.gradleProperty(DOWNLOAD_MIRRORS_PROPERTY)
+            .map { rules -> rules.split(',').map { it.trim() }.filter { it.isNotEmpty() } }
+    )
+}
+
 fun commentRegex(): Regex {
     return Regex("\\s*#.*")
 }

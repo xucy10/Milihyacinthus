@@ -34,7 +34,9 @@ import org.gradle.kotlin.dsl.*
 
 abstract class PaperweightCoreExtension @Inject constructor(objects: ObjectFactory, project: Project) {
     val minecraftVersion: Property<String> = objects.property()
-    val minecraftManifestUrl: Property<String> = objects.property<String>().convention(MC_MANIFEST_URL)
+    val minecraftManifestUrl: Property<String> = objects.property<String>().convention(
+        project.providers.gradleProperty(MC_MANIFEST_URL_PROPERTY).orElse(MC_MANIFEST_URL)
+    )
 
     val mainClass: Property<String> = objects.property<String>().convention("org.bukkit.craftbukkit.Main")
     val bundlerJarName: Property<String> = objects.property<String>().convention("paper")

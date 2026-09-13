@@ -34,6 +34,13 @@ const val MC_LIBRARY_URL = "https://libraries.minecraft.net/"
 
 const val MC_MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 
+// Download tuning properties (Mili: 泛用性/稳定性/性能)
+const val MC_MANIFEST_URL_PROPERTY = "paperweight.mojangManifestUrl"
+const val DOWNLOAD_RETRIES_PROPERTY = "paperweight.download.retries"
+const val DOWNLOAD_MAX_CONNECTIONS_PROPERTY = "paperweight.download.maxConnections"
+const val DOWNLOAD_MAX_CONN_PER_ROUTE_PROPERTY = "paperweight.download.maxConnectionsPerRoute"
+const val DOWNLOAD_MIRRORS_PROPERTY = "paperweight.download.mirrors"
+
 const val PAPER_MAVEN_REPO_URL = "https://repo.papermc.io/repository/maven-public/"
 
 const val MAVEN_CENTRAL_URL = "https://repo.maven.apache.org/maven2/"
