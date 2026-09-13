@@ -57,4 +57,6 @@ data class MinecraftVersionManifest(
     fun serverDownload(): Download = download("server")
 
     fun serverMappingsDownload(): Download = download("server_mappings")
+
+    fun serverMappingsDownloadOrNull(): Download? = downloads["server_mappings"]
 }

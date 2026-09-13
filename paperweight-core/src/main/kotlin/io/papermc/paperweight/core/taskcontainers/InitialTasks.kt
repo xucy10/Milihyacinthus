@@ -69,7 +69,7 @@ open class InitialTasks(
 
         downloader.set(downloadService)
     }
-    private val versionManifest = downloadMcVersionManifest.flatMap { it.outputFile }.map { gson.fromJson<MinecraftVersionManifest>(it) }
+    val versionManifest = downloadMcVersionManifest.flatMap { it.outputFile }.map { gson.fromJson<MinecraftVersionManifest>(it) }
 
     val downloadServerJar by tasks.registering<DownloadServerJar> {
         downloadUrl.set(versionManifest.map { version -> version.serverDownload().url })
@@ -82,6 +82,10 @@ open class InitialTasks(
         url.set(versionManifest.map { version -> version.serverMappingsDownload().url })
         expectedHash.set(versionManifest.map { version -> version.serverMappingsDownload().hash() })
         outputFile.set(cache.resolve(SERVER_MAPPINGS))
+
+        // Newer Minecraft versions no longer publish server mappings; skip silently
+        // instead of failing when the version manifest has no 'server_mappings' entry.
+        onlyIf { versionManifest.get().serverMappingsDownloadOrNull() != null }
 
         downloader.set(downloadService)
     }
