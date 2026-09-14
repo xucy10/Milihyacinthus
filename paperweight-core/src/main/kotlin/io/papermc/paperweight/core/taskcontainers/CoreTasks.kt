@@ -59,19 +59,15 @@ class CoreTasks(
         paramMappings.from(project.configurations.named(MACHE_PARAM_MAPPINGS_CONFIG))
         constants.from(project.configurations.named(MACHE_CONSTANTS_CONFIG))
 
-        // Only wire server mappings when the mache args reference them AND the version
-        // manifest publishes them (newer Minecraft versions no longer ship mappings).
-        serverMappings.set(
-            mache.zip(versionManifest) { meta, manifest ->
-                meta.remapperArgs.any { "{mappingsFile}" in it } && manifest.serverMappingsDownloadOrNull() != null
-            }.flatMap { needed ->
-                if (needed) {
-                    downloadMappings.flatMap { it.outputFile }
-                } else {
-                    project.objects.fileProperty()
-                }
-            }
-        )
+        // Only wire server mappings when the mache args reference the {mappingsFile}
+        // placeholder. Newer Minecraft versions (26.x+) no longer publish server
+        // mappings, and their mache remapperArgs no longer use the placeholder, so
+        // nothing gets wired there. Must stay configuration-time-resolvable: a zip()
+        // with versionManifest inside flatMap() would be queried during dependency
+        // resolution before downloadMcVersionManifest has completed.
+        if (mache.get().remapperArgs.any { "{mappingsFile}" in it }) {
+            serverMappings.set(downloadMappings.flatMap { it.outputFile })
+        }
 
         outputJar.set(layout.cache.resolve(FINAL_REMAPPED_CODEBOOK_JAR))
     }
